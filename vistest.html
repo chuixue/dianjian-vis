@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)http://kenedict.com/networks/worldcup14/vis/ , thanks Andre!-->
+<html><head><meta http-equiv="content-type" content="text/html; charset=UTF8">
+  <title>Network |  Static smooth curves - World Cup Network</title>
+  
+  <script src="js/jquery-1.9.1.js"></script>
+  <script type="text/javascript" src="js/vis.js"></script>
+  <script type="text/javascript" src="js/json2.js"></script>  
+  <script type="text/javascript" src="js/ejs.js"></script>    
+  <script type="text/javascript" src="js/network.js"></script>    
+  <script src="js/jquery.min.js"></script>
+  <script src="js/jquery.easyui.min.js"></script>
+  <script src="js/echarts.min.js"></script>
+  <script src="js/datazoom.js"></script>
+  
+  	<link type="text/css" rel="stylesheet" href="css/vis.css">
+	<!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <link href="css/icon.css" rel="stylesheet">
+	<link href="css/easyui.css" rel="stylesheet">
+    
+  <style type="text/css">
+    #mynetwork {
+      width: 800px;
+      height: 640px;
+      border: 1px solid lightgray;
+	  float: left
+    }
+	.hide{ display:none }
+  </style>
+
+</head>
+
+<body>
+
+<h2>电建项目部门网络图示</h2>
+<div style="width:700px; font-size:14px;">
+	Network Visualization
+  <br /><br />
+</div>
+
+<div id="mynetwork"></div>
+<!--右侧列表总框-->
+<div style="float: left; width:500px; height:640px; border:1px solid #ccc">
+	<ul class="nav nav-tabs" id="myTab"> 
+      	<li class="active"><a href="#li-node">节点</a></li> 
+      	<li><a href="#li-network">网络</a></li> 
+		<li><a href="#li-calc">统计</a></li> 
+    </ul> 
+       
+    <div class="tab-content" style="margin-top:0px"> 
+		<div class="tab-pane active" id="li-node">
+            <div id="li1" style="clear:both">
+                <table id="tbList" class="easyui-datagrid" data-options="fitColumns:true,title:'',singleSelect:true,remoteSort:false,
+                                fitColumns:true,halign:'center',height:590" >   
+                    <thead>   
+                        <tr>   
+                            <th data-options="field:'numb',width:100,sortable:true,">ID</th>   
+                            <th data-options="field:'name',width:100,sortable:true,">部门</th>   
+                            <th data-options="field:'degree',width:100,sortable:true,">度</th>   
+                            <th data-options="field:'btness',width:100,sortable:true,">介数</th>   
+                            <th data-options="field:'nofit',width:100,sortable:true,">不配合度</th>                                   
+                        </tr>   
+                    </thead>   
+                    <tbody>   
+            
+                    </tbody>   
+                </table> 
+            </div>        
+        </div> <!--li1-End-->
+      	<div class="tab-pane" id="li-network">
+
+        </div> <!--li1-End-->
+      	<div class="tab-pane" id="li-calc">
+			<div id="p" class="easyui-panel" title="社团划分预览" style="width:500px;height:560px;" >   
+	            <ul id="tt" class="easyui-tree"></ul>  
+			</div>  
+
+        </div> <!--li1-End-->
+	</div> 	
+
+</div>
+
+<script id="tm_table" type="text/template">
+	<table class="table">
+    	<thead>
+	    	<tr><th>Name</th><th>Value</th><th>Descriptions</th></tr>
+        </thead>
+        <tbody>
+        	<tr><td>节点个数</td><td><%= net.len_nodes %></td><td></td></tr>
+            <tr><td>边个数</td><td><%= net.len_edges %></td><td></td></tr>
+            <tr><td>平均度</td><td><%= net.avg_degree %></td><td></td></tr>
+            <tr><td>平均路径长度</td><td><%= net.avg_path %></td><td></td></tr>
+            <tr><td>聚类系数</td><td><%= net.clustering %></td><td></td></tr>
+            <tr><td>网络直径</td><td><%= net.diameter %></td><td></td></tr>
+            <tr><td>连接组件</td><td><%= net.len_components %></td><td></td></tr>
+            <tr><td>模块度</td><td><%= module.modular %></td><td></td></tr>
+            <tr><td>社团个数</td><td><%= module.community %></td><td></td></tr>	
+		</tbody>
+	</table>
+</script>
+
+<script type="text/javascript">
+	$(document).ready(function (e) {
+		$('ul.nav a').click(function (e) {
+			e.preventDefault();
+			$(this).tab('show');
+		});
+		
+		loaddata();
+		
+	});
+
+  var network;
+  var allNodes;
+  var highlightActive = false;
+  var temp = getScaleFreeNetwork(25);
+  
+//  cout(temp);
+	function loaddata(){
+		$.ajax({
+			type:'GET',
+			url:'http://127.0.0.1:8000/network/',
+			dataType:'jsonp',
+			jsonpCallback: 'call1back',
+			success:function(data)
+			{
+				dt = JSON.parse(data);				//document.write(JSON.stringify(dt));
+				temp = Data_d3ToVis(dt.network);
+				var nodesDataset = new vis.DataSet(temp.nodes); // these come from WorldCup2014.js
+				var edgesDataset = new vis.DataSet(temp.edges); // these come from WorldCup2014.js
+				redrawAll(nodesDataset, edgesDataset);
+				
+				$("#tbList").datagrid('loadData',{"total":dt.nodes.length, "rows":dt.nodes }); 	//列表
+				$("#tbList").datagrid({ onSelect: selectNode });
+				var html = ejs.render($("#tm_table").html(), { net:dt.netInfo, module:{"modular":dt.network.modular,
+						 "community":dt.network.community}});
+				$("#li-network").html(html) //网络统计
+				
+				$('#tt').tree('loadData', gettree(dt.network.community, dt.network.nodes));
+				function gettree(part, nodes){
+					var tree = [], i;
+					for(i=0; i<part; i++){
+						tree.push({ "id":i+1, "text": "社团" + (i+1), "iconCls":"icon-save", "children":[]});
+					}
+					nodes.forEach(function(d, j){			
+						tree[d.group].children.push({ "id":i+j, "text": d.name, "iconCls":"icon-save"});
+					})	
+					return tree;
+				}
+			},
+			error:function(data)
+			{
+				alert("error");
+			}
+		});
+	}
+
+
+function Data_d3ToVis(data){
+	return { nodes: data.nodes.map(function(d, i){ return {id: d.id, label: d.name, group:d.group }; }),
+		 	 edges: data.links.map(function(d, i){ return {from: d.source, to: d.target }; }) };
+}
+
+function redrawAll(nodesDataset, edgesDataset) {
+	var datazoom = new Zoom("mynetwork");
+	var id = datazoom.did;
+    var container = document.getElementById(id);
+    var options = {
+      nodes: {
+        shape: 'dot', size: 10,
+        scaling: {
+          min: 10,
+          max: 30,
+          label: { min: 8, max: 20, drawThreshold: 10, maxVisible: 20 }
+        },
+        font: { size: 14, face: 'Tahoma' }
+      },
+      edges: {
+        width: 0.15,
+        color: {inherit: 'from'},
+        smooth: { type: 'dynamic' }
+      },
+	  groups: { },
+      physics: false,
+      interaction: { tooltipDelay: 200, hideEdgesOnDrag: true }
+    };
+
+    var data = {nodes:nodesDataset, edges:edgesDataset} // Note: data is coming from ./datasources/WorldCup2014.js
+
+
+    network = new vis.Network(container, data, options);
+	network.on("selectNode", function(obj){ 
+		var node = data.nodes._data[obj.nodes[0]];
+		selectUnit(node.label);
+
+		
+	
+	});
+	network.
+		
+    // get a JSON object
+    allNodes = nodesDataset.get({returnType:"Object"});
+}
+
+function viewTree(callback){
+	var height = 0;
+	$('#tt').tree('getRoots').forEach(function(d){ 
+		if(callback)callback(d, height);
+		_viewTree(d, height, callback);
+	});
+}
+
+function _viewTree(node, height, callback){
+	height++;
+	if(!node.children)return;
+	node.children.forEach(function(d, i){ 
+		if(callback)callback(d, height);
+		_viewTree(d);
+	});
+	height--;
+}
+
+function selectUnit(name, type){
+	type = type || 0;
+	var index = $("#tbList").datagrid("getRows").map(function(d){ return d.name; }).indexOf(name);
+	$("#tbList").datagrid("selectRow", index);
+
+	viewTree(function(node, h){ if(node.text!=name)return;
+		target = $('#tt').tree('find', node.id).target;
+		$("#tt").tree("select", target).tree("scrollTo", target);
+	});
+}
+
+function selectNode(rowIndex, rowData){
+//	rowData.name;
+//	network.nodes.
+	cout(network.options);
+}
+
+//  redrawAll()
+
+</script>
+
+<script src="js/bootstrap.min.js"></script>
+
+</body></html>

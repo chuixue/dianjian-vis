@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>无标题文档</title>
+</head>
+<script src="js/esl.js"></script>
+<script src="js/config.js"></script>
+<script src="js/jquery-1.9.1.js"></script>
+
+
+<body>
+<div id="view1" style="width:100%; height:500px"></div>
+<script language="javascript">
+	
+	$.ajax({
+		type:'GET',
+		url:'http://127.0.0.1:8000/network/',
+		dataType:'jsonp',
+		type: 'get',
+	    jsonpCallback: 'call1back',
+		success:function(data)
+		{
+			alert(data.zqxt);
+		},
+		error:function(data)
+		{
+			alert("error");
+		}
+	});
+	
+	
+	
+	//loadView("view1");
+	function loadView(data,id){
+		//Init(option,id);
+	}
+	
+	function Init(option,id){
+		id=id || "main";
+		require(['echarts','echarts/chart/line','echarts/chart/bar'],
+            function (ec) {
+                var myChart = ec.init(document.getElementById(id));				
+				myChart.setOption(option);
+            }
+        )	 		
+	}
+</script>
+
+
+
+
+
+
+</body>
+</html>

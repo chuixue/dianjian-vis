@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)http://kenedict.com/networks/worldcup14/vis/ , thanks Andre!-->
+<html><head><meta http-equiv="content-type" content="text/html; charset=UTF8">
+  <title>Network |  Static smooth curves - World Cup Network</title>
+  
+  <script src="js/jquery-1.9.1.js"></script>
+  <script type="text/javascript" src="js/vis.js"></script>
+  <script type="text/javascript" src="js/json2.js"></script>  
+  <script type="text/javascript" src="js/ejs.js"></script>    
+  <script type="text/javascript" src="js/network.js"></script>    
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/jquery.min.js"></script>
+  <script src="js/jquery.easyui.min.js"></script>
+
+    <link href="css/easyui.css" rel="stylesheet">
+
+    <link href="css/icon.css" rel="stylesheet">
+
+  <style type="text/css">
+
+  </style>
+
+</head>
+
+<body>
+
+
+ 	<div class="col-md-10">
+		<table class="table">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>部门</th>
+					<th>度</th>
+					<th>介数</th>
+					<th>项目数</th>
+				</tr>
+			</thead>
+			<tbody>
+				<% for(var i=0;i< data.length;i++){ %>
+					<tr>
+						<td><%= data[i].numb %></td>
+						<td><%= data[i].name %></td>
+						<td><%= data[i].degree %></td>
+						<td><%= data[i].btness %></td>
+						<td><%= data[i].proj %></td>
+					</tr>
+				<% } %>
+			</tbody>
+		</table>
+	</div>
+
+
+
+
+<div style="width:900px;height:600px; border:1px solid #ccc">
+    <table id="tbList" class="easyui-datagrid" data-options="fitColumns:true,title:' ',singleSelect:true,remoteSort:false,
+    				fitColumns:true,halign:'center'," >   
+        <thead>   
+            <tr>   
+                <th data-options="field:'numb',width:100,sortable:true,">ID</th>   
+                <th data-options="field:'name',width:100,sortable:true,">部门</th>   
+                <th data-options="field:'degree',width:100,sortable:true,">度</th>   
+                <th data-options="field:'pbtness',width:100,sortable:true,">介数</th>   
+                <th data-options="field:'proj',width:100,sortable:true,">项目数</th>                                   
+            </tr>   
+        </thead>   
+        <tbody>   
+
+        </tbody>   
+    </table> 
+</div>
+
+<script type="text/javascript">
+	$(document).ready(function(e) {
+    	$("#tbList").datagrid('loadData',{"total":3, "rows":[{id:1,name:'kitty',price:12},{id:2,name:'lucy',price:22}]});    
+    });
+	
+	
+
+//	var html = ejs.render($("#tm_table").html(), {data: [{numb:'1',name:'ds',degree:34,btness:45,proj:22}]});
+//	$("#table").html(html);
+
+
+ 
+</script>
+
+
+</body></html>
