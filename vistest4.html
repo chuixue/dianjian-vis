@@ -43,9 +43,6 @@
 <div style="width:700px; font-size:14px;">
 	
 </div>
-<div class="easyui-panel" title="项目时间分布" style="width:1300px; height:250px; border:1px solid #ccc" >
-	<div id="proj" style="width:1260px"></div>
-</div>
 
 <div id="mynetwork" style="margin-bottom:100px"></div>
 
@@ -89,7 +86,12 @@
 	</div> 	
 
 </div>
-
+<p>
+  <label for="ordering"><input type="checkbox" id="ordering" checked/> Apply custom ordering. Order items by their id.</label>
+</p>
+<div class="easyui-panel" title="项目时间分布" style="width:1300px; height:1050px; border:1px solid #ccc" >
+	<div id="proj" style="width:1260px"></div>
+</div>
 <script id="tm_table" type="text/template">
 	<table class="table">
     	<thead>
@@ -228,6 +230,31 @@ function getProjectPos(_proj, _path){
 	var perH = 12, height = lines.length * (perH + 6) + 20, comColor = "#3399CC", 
 		selColor = "#C60", overColor = "#9C6",
 		title = '<div><%= name %><br/>项目周期：<%= length %><br/>日期：<%= begin %>至<%= end %><br/>参与部门：<%= uList %></div>';
+	// DOM element where the Timeline will be attached
+	var container = document.getElementById('proj'), items = new vis.DataSet(), begin, end;
+	dataset.forEach(function(d, i){
+		begin = vis.moment(lsp[d[1].index].begin), end = vis.moment(lsp[d[1].index].end);
+		items.add({
+      		id: i,
+	    	content: lsp[d[1].index].name,
+      		start: begin.clone(),
+      		end:  end.clone()
+    	});	
+	});
+
+	function customOrder (a, b) { return a.id - b.id; }
+
+  	// Configuration for the Timeline
+  	var options = { order: customOrder, editable: true, margin: {item: 0} },
+  		timeline = new vis.Timeline(container, items, options),
+		ordering = document.getElementById('ordering');
+	ordering.onchange = function () {
+    	timeline.setOptions({
+      		order: ordering.checked ? customOrder: null
+    	});
+  	};
+	
+	/*
 	var svg = d3.select("#proj")
 		.append("svg")
 		.attr("width", width)
@@ -250,7 +277,6 @@ function getProjectPos(_proj, _path){
 		})
 		.attr("id", function(d){ return 'rect' + d[1].index } )
 		.attr("fill", comColor)	
-		/*
 		.on("mouseover",function(d,i){
 			if(-1 == sel.indexOf(d3.select(this).attr("id").substr(4))){
 				d3.select(this).attr("fill", overColor); 
@@ -261,7 +287,6 @@ function getProjectPos(_proj, _path){
 				d3.select(this).transition().duration(300).attr("fill", comColor);
 			}
 		})
-		*/
 		.on("click",function(d,i){
 			var id = d3.select(this).attr("id").substr(4), color = comColor;
 			if(-1 == sel.indexOf(id)){
@@ -278,8 +303,7 @@ function getProjectPos(_proj, _path){
 			end:lsp[d[1].index].end, 
 			uList:getUnitList(lsp[d[1].index].id) });
 		});
-		
-	var getName = function(){ for(var k in data){ } };
+		*/
 	var txt = "";
 	lines.forEach(function(d, i){
 		d.forEach(function(d2, i2){
@@ -291,8 +315,8 @@ function getProjectPos(_proj, _path){
 	//console.log(_proj);
 	//console.log(lsp);	
 
-	$('.tooltipe').tipsy({ html:true });
-//	alert(JSON.stringify(proj));
+	//$('.tooltipe').tipsy({ html:true });
+	//	alert(JSON.stringify(proj));
 }
 function Data_d3ToVis(data){
 	return { nodes: data.nodes.map(function(d, i){ return {id: d.id, label: d.name, group:d.group }; }),

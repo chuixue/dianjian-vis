@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)http://kenedict.com/networks/worldcup14/vis/ , thanks Andre!-->
+<html><head><meta http-equiv="content-type" content="text/html; charset=UTF8">
+  <title>Network |  Static smooth curves - World Cup Network</title>
+  
+  <script src="js/jquery-1.9.1.js"></script>
+  <script type="text/javascript" src="js/vis.js"></script>
+  <script type="text/javascript" src="js/json2.js"></script>  
+  <script type="text/javascript" src="js/ejs.js"></script>    
+  <script type="text/javascript" src="js/network.js"></script>
+  <script type='text/javascript' src="js/echarts.min.js"></script>
+  <script type='text/javascript' src="js/datazoom.js"></script>
+  <script type='text/javascript' src="js/d3.v3.min.js"></script>
+  <script type='text/javascript' src="js/jquery.min.js"></script>
+  <script type='text/javascript' src="js/jquery.easyui.min.js"></script>
+  <script type='text/javascript' src='js/jquery.tipsy.js'></script>
+  
+	<link rel="stylesheet" href="css/tipsy.css" type="text/css" />  
+  	<link type="text/css" rel="stylesheet" href="css/vis.css">
+	<!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <link href="css/icon.css" rel="stylesheet">
+	<link href="css/easyui.css" rel="stylesheet">
+    
+  <style type="text/css">
+    #mynetwork {
+      width: 800px;
+      height: 640px;
+      border: 1px solid lightgray;
+	  float: left
+    }
+	.hide{ display:none }
+  </style>
+
+</head>
+
+<body style="margin-left:150px">
+
+<h2>电建项目部门网络分析</h2>
+
+<p>
+  <label for="ordering"><input type="checkbox" id="ordering" checked/> Apply custom ordering. Order items by their id.</label>
+</p>
+<div class="" title="项目时间分布" style="width:1300px; height:auto;" >
+	<div id="proj" style="width:1260px"></div>
+</div>
+
+
+<script type="text/javascript">
+	var __did = null;
+	var __myChart = null;
+	$(document).ready(function (e) {
+		$('ul.nav a').click(function (e) {
+			e.preventDefault();
+			$(this).tab('show');
+		});
+		
+		loaddata();
+		
+	});
+  
+	function loaddata(){
+		$.ajax({
+			type:'GET',
+			url:'http://127.0.0.1:8000/network/',
+			dataType:'jsonp',
+			jsonpCallback: 'call1back',
+			success:function(data)
+			{
+				dt = JSON.parse(data);
+				loadFirst(dt);
+				//var nodesDataset = new vis.DataSet(temp.nodes); // these come from WorldCup2014.js
+				//var edgesDataset = new vis.DataSet(temp.edges); // these come from WorldCup2014.js
+				//redrawAll(nodesDataset, edgesDataset);
+				
+			},
+			error:function(data)
+			{
+				alert("error");
+			}
+		});
+	}
+
+//加载基础性框架
+function loadFirst(_data) {
+		
+	getProjectPos(_data.project, _data.path);
+	
+}
+function getProjectPos(_proj, _path){
+	var len = function(d){ return d };
+	function dateB(t1, t2){ return (new Date(t1)).getTime() > (new Date(t2)).getTime()}; //Big
+	function dateS(t1, t2){ return (new Date(t1)).getTime() < (new Date(t2)).getTime()}; //Small
+	function dateF(t1, t2){ return Math.abs((new Date(t1)-new Date(t2))/(24*60*60*1000)); } 
+	function dateT(days) { 
+		var y = parseInt(days / 365)==0 ? "" : parseInt(days / 365) + "年",
+			m = parseInt((days % 365) /30)==0 ? "" : parseInt((days % 365) /30) + "个月";
+		return  y + m;
+	}
+	function getKeys(dic){ var ls=[]; for(var k in dic)ls.push(k); return ls; }
+	function getUnitList(pid){ 
+		var ls = getKeys(_proj[pid].unit), st = "";
+		if(ls)st = ls.reduce(function(a, b){ return a + _path[b] + ", " }, "");
+		return ls ? st.substr(0, st.length-2) : st;
+	};
+	
+	var width = $("#proj").width(), lsp = [], sel = [], lines = [],
+		begin, end, index = 0, dataset=[];
+	
+	//求最早最晚日期
+	for(var p in _proj){
+		if(index++ == 0){ begin = _proj[p]['begin']; end = begin; }
+		begin = dateS(_proj[p]['begin'], begin)? _proj[p]['begin']: begin;
+		end = dateB(_proj[p]['end'], end)? _proj[p]['end']: end;
+		_proj[p]['index'] = index-1;
+		lsp.push(_proj[p]);
+	}
+	var pScale = d3.scale.linear().domain([0, dateF(begin, end)]).range([0, width-30]); 
+	lsp.forEach(function(d, i){
+		if(d['end']){
+			var t1 = dateF(begin, d['begin']), t2 = dateF(begin, d['end']? d['end']: end), j = -1,
+				line = { 'index':d['index'], 'date':[t1, t2], 'pos':[pScale(t1), pScale(t2)] };
+			for(var i=0; i<lines.length; i++){		
+				for(j=0; j<lines[i].length; j++){
+					if(!(t2 < lines[i][j].date[0] || t1 > lines[i][j].date[1] ))break;
+				};
+				if(j == lines[i].length) break;	//可以插入
+			}
+			if(i!= lines.length){
+				lines[i].push(line);
+				dataset.push([i, line]);
+			}else{
+				lines.push([line]);
+				dataset.push([lines.length-1, line]);
+			}
+		}
+	});
+
+	var perH = 12, height = lines.length * (perH + 6) + 20, comColor = "#3399CC", 
+		selColor = "#C60", overColor = "#9C6",
+		title = '<div><%= name %><br/>项目周期：<%= length %><br/>日期：<%= begin %>至<%= end %><br/>参与部门：<%= uList %></div>';
+	// DOM element where the Timeline will be attached
+	var container = document.getElementById('proj'), items = new vis.DataSet(), begin, end;
+	dataset.forEach(function(d, i){
+		begin = vis.moment(lsp[d[1].index].begin), end = vis.moment(lsp[d[1].index].end);
+		items.add({
+      		id: i,
+	    	content: lsp[d[1].index].name,
+      		start: begin.clone(),
+      		end:  end.clone()
+    	});	
+	});
+
+	function customOrder (a, b) { return a.id - b.id; }
+
+  	// Configuration for the Timeline
+  	var options = { order: customOrder, editable: true, margin: {item: 0} },
+  		timeline = new vis.Timeline(container, items, options),
+		ordering = document.getElementById('ordering');
+	ordering.onchange = function () {
+    	timeline.setOptions({
+      		order: ordering.checked ? customOrder: null
+    	});
+  	};
+	
+
+	var txt = "";
+	lines.forEach(function(d, i){
+		d.forEach(function(d2, i2){
+			txt += Math.ceil((d2.date[1]-d2.date[0])) + ", " + lsp[d2.index].name + ", " + d2.index + ", " + d2.date[0] + 
+				", " + d2.date[1] + "\t";
+		});
+		txt += "<br />\r\n";
+	})
+	//console.log(_proj);
+	//console.log(lsp);	
+
+	//$('.tooltipe').tipsy({ html:true });
+	//	alert(JSON.stringify(proj));
+}
+function Data_d3ToVis(data){
+	return { nodes: data.nodes.map(function(d, i){ return {id: d.id, label: d.name, group:d.group }; }),
+		 	 edges: data.links.map(function(d, i){ return {from: d.source, to: d.target }; }) };
+}
+function Data_d3ToEC(data){
+	var groupc = data.nodes.reduce(function(a, b){ return a>parseInt(b.group) ? a : parseInt(b.group); }, 0);
+	return { nodes: data.nodes.map(function(d, i ){ return {id: d.id, name: d.name, value: 10, 
+					category:d.group, label:{normal:{show:true}} };
+					}),
+			 links: data.links.map(function(d, i ){ return {source: d.source, target:d.target}; }),
+			 groups: range(1, groupc + 2).map(function(d, i){ return "社团" + i; }) };
+}
+
+
+
+
+function selectNode(rowIndex, rowData){
+//	rowData.name;
+//	network.nodes.
+	cout(network.options);
+}
+
+//  redrawAll()
+
+</script>
+
+<script src="js/bootstrap.min.js"></script>
+
+</body></html>
