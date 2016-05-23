@@ -19,6 +19,7 @@
   	<link type="text/css" rel="stylesheet" href="css/vis.css">
 	<!-- Bootstrap core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
     <!-- Bootstrap theme -->
     <link href="css/bootstrap-theme.min.css" rel="stylesheet">
 
@@ -41,7 +42,7 @@
 
 <h2>电建项目部门网络分析</h2>
 <div style="width:700px; font-size:14px;">
-	
+
 </div>
 <div class="easyui-panel" title="项目时间分布" style="width:1300px; height:250px; border:1px solid #ccc" >
 	<div id="proj" style="width:1260px"></div>
@@ -170,7 +171,7 @@ function loadNetwork(data){
 //加载基础性框架
 function loadFirst(_data) {
 	var datazoom = new Zoom("mynetwork");
-	datazoom.loadZoom(_data.timeInfo, listenZoom);
+	datazoom.loadZoom(_data.timeInfo, listenZoom).addPlay();	;
 	__did = datazoom.did;
 	
 	getProjectPos(_data.project, _data.path);
@@ -233,11 +234,11 @@ function getProjectPos(_proj, _path){
 		.attr("width", width)
 		.attr("height", height);
 	var rect = svg.append("g")
-		.selectAll(".tooltipe")
+		.selectAll(".tooltipes")
 		.data(dataset)
 		.enter()
 		.append("rect")
-		.attr("class","tooltipe")
+		.attr("class","tooltipes")
 		.attr("y", function(d,i){
 			return d[0] * (perH + 6);
 		} )
@@ -291,7 +292,7 @@ function getProjectPos(_proj, _path){
 	//console.log(_proj);
 	//console.log(lsp);	
 
-	$('.tooltipe').tipsy({ html:true });
+	$('.tooltipes').tipsy({ html:true, gravity:'se', fade: true });
 //	alert(JSON.stringify(proj));
 }
 function Data_d3ToVis(data){
@@ -309,7 +310,7 @@ function Data_d3ToEC(data){
 function netOption(_data){
 	var option = {
         title: {
-            text: 'Department', subtext: 'Default layout', top: 'bottom', left: 'right'
+            text: 'Department', subtext: ' ', top: 'bottom', left: 'right'
         },
         tooltip: {},
         legend: [{
@@ -408,5 +409,6 @@ function selectNode(rowIndex, rowData){
 </script>
 
 <script src="js/bootstrap.min.js"></script>
+
 
 </body></html>

@@ -7,12 +7,12 @@
   <script type="text/javascript" src="js/vis.js"></script>
   <script type="text/javascript" src="js/json2.js"></script>  
   <script type="text/javascript" src="js/ejs.js"></script>    
+  <script src="js/d3.v3.min.js"></script>  
   <script type="text/javascript" src="js/networky.js"></script>    
   <script src="js/jquery.min.js"></script>
   <script src="js/jquery.easyui.min.js"></script>
   <script src="js/echarts.min.js"></script>
   <script src="js/datazoom.js"></script>
-  <script src="js/d3.v3.min.js"></script>
   <script src="js/jsnetworkx.js"></script>
   <script src="js/jLouvain.js"></script>
   
@@ -112,14 +112,19 @@
 			e.preventDefault();
 			$(this).tab('show');
 		});
-		jsNetCalc();
-		//loaddata();
-		
+		//jsNetCalc();
+		loaddata();
+		return;
+		G = ny.karate_club_graph();
+		G.community_detection();			
+		var net = G.get_graph_echarts();			
+		draw_graph_echarts("mynetwork", net);
 	});
 
   var network;
   var allNodes;
   var highlightActive = false;
+  var PATH, Project;
 //  var temp = getScaleFreeNetwork(25);
   
 //  cout(temp);
@@ -136,10 +141,21 @@
 				var nodesDataset = new vis.DataSet(temp.nodes); // these come from WorldCup2014.js
 				var edgesDataset = new vis.DataSet(temp.edges); // these come from WorldCup2014.js
 				//redrawAll(nodesDataset, edgesDataset);
-				jsNetCalc(dt.project, dt.degree);
+				//jsNetCalc(dt.project, dt.degree);
+				Project = dt.project;
+				PATH = dt.path;
+				var lsP = getValues(Project);
+				var degree = getDegreeByProject(lsP, PATH);
+				var G=reNetwork(lsP, degree);
+				G.community_detection();
+				//G.draw("mynetwork", PATH);
 				
+				var nds = getNodeInfo(G, PATH);
+				$("#tbList").datagrid('loadData',{"total":nds.length, "rows":nds }); 	//列表
+
+				draw_graph_echarts("mynetwork", G.get_graph_echarts(PATH));
+				return;
 				
-				$("#tbList").datagrid('loadData',{"total":dt.nodes.length, "rows":dt.nodes }); 	//列表
 				$("#tbList").datagrid({ onSelect: selectNode });
 				var html = ejs.render($("#tm_table").html(), { net:dt.netInfo, module:{"modular":dt.network.modular,
 						 "community":dt.network.community}});
@@ -167,69 +183,128 @@
 function getKeys(obj){
 	var ls=[];
 	for(var key in obj){ ls.push(key);}
-	return ls
+	return ls;
 }
 function getValues(obj){
 	var ls=[];
 	for(var key in obj){ ls.push(obj[key]);}
-	return ls
+	return ls;
+}
+function getItemsCount(obj){
+	var count = 0;
+	for(var key in obj)count++;
+	return count;	
 }
 function getBig2(lsUnit, _degree){
 	var ls = lsUnit.map(function(d, i){ return [d, _degree[d]]; });
 	ls.sort(function(a, b){ return a[1] < b[1]; });
 	return ls.length>1 ? [ls[0][0], ls[1][0]] : ls[0][0];
 }
+function getDegreeByProject(project, _path){
+	var dg = {};
+	$(project).each(function(i, p){
+		lsu = getKeys(p.unit);
+		if(lsu.length<2)return;
+		for(var j=0; j<lsu.length; j++){
+			for(var k=j+1; k<lsu.length; k++){
+				var uj = _path[lsu[j]], uk = _path[lsu[k]];
+				if(uj == undefined || uk == undefined)continue;
+				/*
+				if(dg[uj] == undefined)dg[uj] = {};
+				if(dg[uj][uk] == undefined)dg[uj][uk] = 1;
+				if(dg[uk] == undefined)dg[uk] = {};
+				if(dg[uk][uj] == undefined)dg[uk][uj] = 1;
+				*/
+				if(dg[lsu[j]] == undefined)dg[lsu[j]] = {};
+				if(dg[lsu[j]][lsu[k]] == undefined)dg[lsu[j]][lsu[k]] = 1;
+				if(dg[lsu[k]] == undefined)dg[lsu[k]] = {};
+				if(dg[lsu[k]][lsu[j]] == undefined)dg[lsu[k]][lsu[j]] = 1;
+			}
+		}
+	});
+	for(var key in dg)dg[key] = getItemsCount(dg[key]);
+	//cout(dg);
+	return dg;
+}
 function reNetwork(project, _degree){
-	var lsp = getValues(project), lsu, lscore, links = {}, key = "";
-	$(lsp).each(function(i, p){
+	var G = ny.Graph();
+	var lsu, lscore, links = {}, key = "";
+	$(project).each(function(i, p){
 		lsu = getKeys(p.unit);
 		if(lsu.length<2)return;
 		lscore = getBig2(lsu, _degree);		//核心节点
-		range(lsu, function(a, b){
+		range(lsu, function(a, b){			
 			if((lscore.indexOf(a) + lscore.indexOf(b)) == -2)return;	//过滤
-			key = a + "_" + b;
-			if(links[key]){
-				links[key]++ ;
-			}else{
-				key = b + "_" + a;
-				if(links[key]){
-					links[key]++;
-				}else{
-					links[key] = 1;
-				}
-			}
+			G.add_edge([a, b]);
 		});	
 	});
+	return G;
+}
+function getNetInfo(G, _path){
+	return { 'avg_degree':G, 'avg_path':G, 'clustering':G, 'diameter':G, 'len_components':G,
+		'len_edges':G, 'len_nodes':G }
+}
+function getNodeInfo(G, _path){
+	var _nodes = G.nodes(), degree = G.degree(), betweenness = G.betweenness_centrality();;
+	return _nodes.map(function(d, i){
+		return { 'numb':i+1, 'name':_path[d], 'degree':degree[d], 
+			'btness':betweenness[d]==0 ? 0 : betweenness[d].toFixed(3), 'nofit':0 };
+	});
+}
+function draw_graph_echarts(id, data){
+	var __myChart = echarts.init(document.getElementById(id));
+	var option = netOption(data);
+
+	//__myChart.setOption(netOption(data));
+	__myChart.setOption(option);
+
+	__myChart.on('click', function(param){
+		var data = param.data;	
+		if(data.source !== undefined && data.target !== undefined)selectNode(data); //点击节点
+		else selectEdge(data);		//单击连边
+	});
+	__myChart.dispatchAction({type: 'highlight', seriesIndex:0, name:'人力资源部'});
+	__myChart.dispatchAction({type: 'highlight', seriesIndex:0, dataIndex:1});//name:'人力资源部'});
+	__myChart.dispatchAction({type: 'highlight', seriesIndex:0, dataIndex:2});//name:'人力资源部'});
+	__myChart.dispatchAction({type: 'highlight', seriesIndex:0, dataIndex:3});//name:'人力资源部'});
+	__myChart.dispatchAction({type: 'highlight', seriesIndex:0, dataIndex:17});//name:'人力资源部'});
+	//, name:''
 	
 }
-function NetWork(){
+function selectNode(data){
+	console.log(data);
 	
 }
-function getG(lines, _path, limit){
+function selectEdge(data){
+	console.log(data);
 	
 }
-/*
-#lines - "xxx_xxx", _path - {path:name}
-def getG(lines, _path, limit):
-    G = nx.Graph()
-    nodes = {}  #索引
-    index = 0
-    for line in lines:
-        sp = line.split("_")
-        if len(sp)<2: continue
-        n1 = _path[sp[0]]
-        n2 = _path[sp[1]]
-        if n1 not in nodes:
-            nodes[n1] = index
-            index += 1
-        if n2 not in nodes:
-            nodes[n2] = index
-            index += 1
-        if lines[line] < limit: continue
-        G.add_edge(nodes[ n1 ], nodes[ n2 ], wight=int(lines[line]))
-#    for n in nodes: print n
-    return { 'G': G, 'nodes': nodes}
-*/	
+function netOption(_data){
+	var option = {
+        title: { text: 'Department', subtext: ' ', top: 'bottom', left: 'right' },
+        legend: [{
+            data: _data.groups, // selectedMode: 'single',
+        }],
+		tooltip: {},
+        animation: false,
+        series : [
+            {
+                name: '部门',
+                type: 'graph', layout: 'force', roam: true,
+                data: _data.nodes, links: _data.links, categories: _data.groups,
+                label: {
+                    normal: {
+                        position: 'right',
+						formatter: '{b}'	
+                    }
+                },
+                force: { repulsion: 1000 }
+            }
+        ]
+    };
+	return option;	
+}
+	
 function range(ls, callback){
 	for(var i=0; i<ls.length; i++)for(var j=i+1; j<ls.length; j++)callback(ls[i], ls[j]);
 }
@@ -242,8 +317,6 @@ function jsNetCalc(project, _degree){
 	
 	var G = new jsnx.Graph();
 
-	
-	
 	G.addNodesFrom(node, {color:"#0064C7"});
 	G.addEdgesFrom(edge);
 	//draw
@@ -265,9 +338,9 @@ function jsNetCalc(project, _degree){
 		labelStyle: {fill: 'white'},
 		stickyDrag: true
 	});
-	return
+	//return
 	//console.log(G2.degree(null, 'weight'));
-	//console.log(jsnx.betweennessCentrality(G2));
+	console.log(jsnx.betweennessCentrality(G));
 	//console.log(jsnx.findCliques(G2));
 	
 	lsDegree = G2.degree(null, 'weight')._numberValues;
@@ -279,12 +352,8 @@ function jsNetCalc(project, _degree){
 	console.log(community());
 	
 	//console.log(G2.degree());
-	//console.log(avg_degree);
-	
-
-	
+	//console.log(avg_degree);	
 	//console.log(jsnx.averageClustering(G));
-	
 }
 
 
@@ -362,13 +431,6 @@ function selectUnit(name, type){
 	});
 }
 
-function selectNode(rowIndex, rowData){
-//	rowData.name;
-//	network.nodes.
-	cout(network.options);
-}
-
-//  redrawAll()
 
 </script>
 

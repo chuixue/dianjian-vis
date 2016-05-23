@@ -5,6 +5,7 @@ function Zoom(id, height_zoom){
 	this.id = id;					//parent div
 	this.did = this.id + '_data';	//data div
 	this.zid = this.id + '_zoom';	//zoom div
+	this.tid = this.id + '_tail';	//tail div
 	this.hz = height_zoom || 40;	//height zoom
 	this.hd = $("#" + this.id).height() - this.hz;	//height data
 	this.tpzooms = 0;	//zoom temp start pos
@@ -36,11 +37,18 @@ function Zoom(id, height_zoom){
 			if(callback)callback([p.start, p.end], 
 				[data[Math.round(data.length * p.start / 100)], data[Math.round(data.length * p.end / 100)]]);
 		});
+		return this;
 	}
-	
+	this.addPlay = function(cb_click){
+		$("#" + this.zid + " div:first-child").append("<div id='" + this.tid + 
+			"' style='float:right;overflow:hidden;padding:0 10px 2px 5px;width:70px;height:" + this.hz + "px'></div>");
+		//icon-play-circle
+		$("#" + this.tid).append('<i class="icon-play-circle icon-3x" onclick="'+ cb_click+ '"></i>');
+	}
 	
 	this.datazoomInit();
 	this.loadZoom();
+
 }
 
 function range(a, b){	var ls = []; for(var i=a; i<b; i++){ ls.push(i); } return ls; }

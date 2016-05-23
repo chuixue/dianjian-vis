@@ -7,11 +7,11 @@
 
   <script type="text/javascript" src="js/json2.js"></script>  
   <script type="text/javascript" src="js/d3.v3.min.js"></script>
-  
+  <script type="text/javascript" src="js/networky.js"></script>  
 
 </head>
 
-<body style="margin-left:150px">
+<body style="margin-left:150px; ">
 
 <h2>电建项目部门网络分析</h2>
 <div style="width:600px; height:800px" id="net1"></div>
@@ -24,8 +24,80 @@
 		
 		
 	});
+///*
+var G=new GraphY(), G=ny.karate_club_graph();
+G.betweenness_centrality();
+G.connected_component();	
+
+
+/*
+n.add_edge(["2", "3", 4]);
+n.add_edge(["4", "3", 5]);
+n.add_edge(["3", "5", 5]);
+n.add_edge(["3", "5", 6]);
+n.add_edge(["3", "5", 6]);
+
+console.log(n.nodes());
+//console.log(n.edges(true));
+console.log(n.degree());
+console.log(n.number_of_nodes());
+console.log(n.size());
+console.log(n.average_degree());
+//console.log(n.edges(true, [2, 3]));
+//console.log(n.weight(['2', '3']));
+
+n.community_detection();
+n.dijkstra_path("17");
+n.shortest_path_length([12]);
+n.shortest_path_length();
+n.floyd();
+n.betweenness_centrality();
+
+s = {};
+//alert(__keys(s).length == 0);
+
+
+var s = {'k1':23, 'k2':24, "k4":0};
+var dc = [];//2, 4, 6, 7
+dc.push(2);
+dc.push(4);
+dc.unshift(1);
+var p = dc.pop();
+//alert(p);
+
+
+//cout(dc.map(function(d){ if(d>2)return d; }));
+
+//__init_array(dc, 0);
+//console.log(dc);
+
+//console.log(n.__keys(null));
+n.remove_edge([17, 6]);
+//n.remove_node(1);
+//n.add_edge([17, 12]);
+
+
+n.draw("net1");
+n.debug();
+
+//var st = [];
+
+
+//st.push(op);
+//var st = __get_array(12, 2);
+//console.log(st);
+//if(s['k3'] == undefined)alert(s['k3']);
+
+//console.log(JSON.stringify(dt1)==JSON.stringify(dt2));
+
+//alert(n.nodes.length)
+
+*/
+  
+  
+  
   
 </script>
-  <script type="text/javascript" src="js/networky.js"></script>
+
 
 </body></html>

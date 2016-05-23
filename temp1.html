@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)http://kenedict.com/networks/worldcup14/vis/ , thanks Andre!-->
+<html><head><meta http-equiv="content-type" content="text/html; charset=UTF8">
+  <title>Network |  Static smooth curves - World Cup Network</title>
+  
+  <script src="js/jquery-1.9.1.js"></script>
+  <script type="text/javascript" src="js/json2.js"></script>  
+
+  <script type="text/javascript" src="js/networky.js"></script>    
+
+  <script src="js/echarts.min.js"></script>
+
+  
+  	<link type="text/css" rel="stylesheet" href="css/vis.css">
+	<!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <link href="css/icon.css" rel="stylesheet">
+	<link href="css/easyui.css" rel="stylesheet">
+    
+  <style type="text/css">
+    #mynetwork {
+      width: 800px;
+      height: 640px;
+      border: 1px solid lightgray;
+	  float: left
+    }
+	.hide{ display:none }
+  </style>
+
+</head>
+
+<body>
+
+<h2>电建项目部门网络图示</h2>
+<div style="width:700px; font-size:14px;">
+	Network Visualization
+  <br /><br />
+</div>
+
+<div id="mynetwork"></div>
+
+
+<script type="text/javascript">
+	///*
+	$(document).ready(function (e) {
+		G = ny.karate_club_graph();
+		G.community_detection();
+		
+		var net = G.get_graph_echarts();
+		console.log(net);
+		draw_graph_echarts("mynetwork", net);		
+	});
+//*/
+  var network;
+  var allNodes;
+  var highlightActive = false;
+  var PATH, Project;
+
+
+//draw_graph_echarts("mynetwork");
+
+
+function draw_graph_echarts(id, data){
+	var __myChart = echarts.init(document.getElementById(id));
+	var option = netOption(data);
+
+	__myChart.setOption(option);
+
+}
+function netOption(graph){
+	option = {
+        title: {
+            text: 'Les Miserables',
+            subtext: 'Default layout',
+            top: 'bottom',
+            left: 'right'
+        },
+        tooltip: {},
+        legend: [{
+			"data":graph.groups.map(function(d){ return d.name; })
+            // selectedMode: 'single',
+            //data: graph.groups
+        }],
+        animation: false,
+        series : [
+            {
+                name: 'Les Miserables',
+                type: 'graph',
+                layout: 'force',
+                data: graph.nodes,
+                links: graph.links,
+                categories: graph.groups,
+                roam: true,
+                label: {
+                    normal: {
+                        position: 'right'
+                    }
+                },
+                force: {
+                    repulsion: 100
+                }
+            }
+        ]
+    };
+	return option;
+}
+	
+
+</script>
+
+</body></html>

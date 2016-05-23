@@ -1,0 +1,43 @@
+
+
+
+<html><head><meta http-equiv="content-type" content="text/html; charset=UTF8">
+  <style type="text/css">
+    #mynetwork {
+      width: 800px;
+      height: 640px;
+      border: 1px solid lightgray;
+	  float: left
+    }
+	.hide{ display:none }
+  </style>
+  
+<script src="js/echarts.min.js"></script>
+<div id="mynetwork"></div>
+
+
+<script type="text/javascript">
+
+
+
+draw_graph_echarts("mynetwork");
+
+function draw_graph_echarts(id){
+	var __myChart = echarts.init(document.getElementById(id));
+	var option = getOption();
+
+	//__myChart.setOption(netOption(data));
+	
+	__myChart.setOption(option);
+
+}
+
+function getOption(){
+	return {"title":{"text":"Les Miserables","subtext":"Default layout","top":"bottom","left":"right"},"tooltip":{},"legend":[{"data":["社团1","社团2"]}],"animation":false,"series":[{"name":"Les Miserables","type":"graph","layout":"force","data":[{"id":0,"name":"2","category":0,"label":{"normal":{"show":true}}},{"id":1,"name":"1","category":0,"label":{"normal":{"show":true}}},{"id":2,"name":"3","category":0,"label":{"normal":{"show":true}}},{"id":3,"name":"4","category":0,"label":{"normal":{"show":true}}},{"id":4,"name":"5","category":0,"label":{"normal":{"show":true}}},{"id":5,"name":"6","category":0,"label":{"normal":{"show":true}}},{"id":6,"name":"7","category":0,"label":{"normal":{"show":true}}},{"id":7,"name":"8","category":0,"label":{"normal":{"show":true}}},{"id":8,"name":"9","category":1,"label":{"normal":{"show":true}}},{"id":9,"name":"10","category":1,"label":{"normal":{"show":true}}},{"id":10,"name":"11","category":0,"label":{"normal":{"show":true}}},{"id":11,"name":"12","category":0,"label":{"normal":{"show":true}}},{"id":12,"name":"13","category":0,"label":{"normal":{"show":true}}},{"id":13,"name":"14","category":0,"label":{"normal":{"show":true}}},{"id":14,"name":"17","category":0,"label":{"normal":{"show":true}}},{"id":15,"name":"18","category":0,"label":{"normal":{"show":true}}},{"id":16,"name":"20","category":0,"label":{"normal":{"show":true}}},{"id":17,"name":"22","category":0,"label":{"normal":{"show":true}}},{"id":18,"name":"26","category":1,"label":{"normal":{"show":true}}},{"id":19,"name":"24","category":1,"label":{"normal":{"show":true}}},{"id":20,"name":"25","category":1,"label":{"normal":{"show":true}}},{"id":21,"name":"28","category":1,"label":{"normal":{"show":true}}},{"id":22,"name":"29","category":1,"label":{"normal":{"show":true}}},{"id":23,"name":"30","category":1,"label":{"normal":{"show":true}}},{"id":24,"name":"27","category":1,"label":{"normal":{"show":true}}},{"id":25,"name":"31","category":1,"label":{"normal":{"show":true}}},{"id":26,"name":"32","category":1,"label":{"normal":{"show":true}}},{"id":27,"name":"33","category":1,"label":{"normal":{"show":true}}},{"id":28,"name":"15","category":1,"label":{"normal":{"show":true}}},{"id":29,"name":"16","category":1,"label":{"normal":{"show":true}}},{"id":30,"name":"19","category":1,"label":{"normal":{"show":true}}},{"id":31,"name":"21","category":1,"label":{"normal":{"show":true}}},{"id":32,"name":"23","category":1,"label":{"normal":{"show":true}}},{"id":33,"name":"34","category":1,"label":{"normal":{"show":true}}}],"links":[{"source":0,"target":1},{"source":2,"target":1},{"source":2,"target":0},{"source":3,"target":1},{"source":3,"target":0},{"source":3,"target":2},{"source":4,"target":1},{"source":5,"target":1},{"source":6,"target":1},{"source":6,"target":4},{"source":6,"target":5},{"source":7,"target":1},{"source":7,"target":0},{"source":7,"target":2},{"source":7,"target":3},{"source":8,"target":1},{"source":8,"target":2},{"source":9,"target":2},{"source":10,"target":1},{"source":10,"target":4},{"source":10,"target":5},{"source":11,"target":1},{"source":12,"target":1},{"source":12,"target":3},{"source":13,"target":1},{"source":13,"target":0},{"source":13,"target":2},{"source":13,"target":3},{"source":14,"target":5},{"source":14,"target":6},{"source":15,"target":1},{"source":15,"target":0},{"source":16,"target":1},{"source":16,"target":0},{"source":17,"target":1},{"source":17,"target":0},{"source":18,"target":19},{"source":18,"target":20},{"source":21,"target":2},{"source":21,"target":19},{"source":21,"target":20},{"source":22,"target":2},{"source":23,"target":19},{"source":23,"target":24},{"source":25,"target":0},{"source":25,"target":8},{"source":26,"target":1},{"source":26,"target":20},{"source":26,"target":18},{"source":26,"target":22},{"source":27,"target":2},{"source":27,"target":8},{"source":27,"target":28},{"source":27,"target":29},{"source":27,"target":30},{"source":27,"target":31},{"source":27,"target":32},{"source":27,"target":19},{"source":27,"target":23},{"source":27,"target":25},{"source":27,"target":26},{"source":33,"target":8},{"source":33,"target":9},{"source":33,"target":13},{"source":33,"target":28},{"source":33,"target":29},{"source":33,"target":30},{"source":33,"target":16},{"source":33,"target":31},{"source":33,"target":32},{"source":33,"target":19},{"source":33,"target":24},{"source":33,"target":21},{"source":33,"target":22},{"source":33,"target":23},{"source":33,"target":25},{"source":33,"target":26},{"source":33,"target":27}],"categories":[{"name":"社团1"},{"name":"社团2"}],"roam":true,"label":{"normal":{"position":"right"}},"force":{"repulsion":100}}]};
+}
+
+
+
+
+
+</script>
