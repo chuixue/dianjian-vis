@@ -51,5 +51,5 @@ function Zoom(id, height_zoom){
 
 }
 
-function range(a, b){	var ls = []; for(var i=a; i<b; i++){ ls.push(i); } return ls; }
+
 function cout(obj){ console.log(obj); }

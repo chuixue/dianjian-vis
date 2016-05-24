@@ -44,6 +44,22 @@
 
 
 <script type="text/javascript">
+	var begin="2012-03-20", end = "2014-02-12";
+	var tm1 = new Date(Date.parse(begin.replace(/-/g, "/")));
+	var tm2 = new Date(Date.parse(end.replace(/-/g, "/")));
+	var t="2";
+	t=t || "hello";
+	function dateF(date){ return date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate(); }
+	
+	end = end || dateF(new Date());
+	alert(end);
+	//alert(tm1.getTime()<tm2.getTime());
+	function timeBetween(begin, end, t1, t2){
+		function Time(str){ return new Date(Date.parse(str.replace(/-/g, "/"))).getTime(); };
+		var _b = Time(begin), _e = Time(end), _t1 = Time(t1), _t2 = Time(t2);
+		return !(_b>_t2 || _t1>_e);
+	}
+	
 	///*
 	$(document).ready(function (e) {
 		G = ny.karate_club_graph();

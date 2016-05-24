@@ -13,7 +13,6 @@
   <script src="js/jquery.easyui.min.js"></script>
   <script src="js/echarts.min.js"></script>
   <script src="js/datazoom.js"></script>
-  <script src="js/jsnetworkx.js"></script>
   <script src="js/jLouvain.js"></script>
   
   	<link type="text/css" rel="stylesheet" href="css/vis.css">
@@ -253,6 +252,7 @@ function getNodeInfo(G, _path){
 }
 function draw_graph_echarts(id, data){
 	var __myChart = echarts.init(document.getElementById(id));
+	
 	var option = netOption(data);
 
 	//__myChart.setOption(netOption(data));
@@ -260,8 +260,8 @@ function draw_graph_echarts(id, data){
 
 	__myChart.on('click', function(param){
 		var data = param.data;	
-		if(data.source !== undefined && data.target !== undefined)selectNode(data); //点击节点
-		else selectEdge(data);		//单击连边
+		if(data.source !== undefined && data.target !== undefined)selectEdge(data); //点击节点
+		else selectNode(data);		//单击连边
 	});
 	__myChart.dispatchAction({type: 'highlight', seriesIndex:0, name:'人力资源部'});
 	__myChart.dispatchAction({type: 'highlight', seriesIndex:0, dataIndex:1});//name:'人力资源部'});
@@ -272,14 +272,12 @@ function draw_graph_echarts(id, data){
 	
 }
 function selectNode(data){
-	console.log(data);
-	
+	selectUnit(data.name);
 }
 function selectEdge(data){
-	console.log(data);
 	
 }
-function netOption(_data){
+function netOption(_data, nodeSize){
 	var option = {
         title: { text: 'Department', subtext: ' ', top: 'bottom', left: 'right' },
         legend: [{
@@ -298,6 +296,7 @@ function netOption(_data){
 						formatter: '{b}'	
                     }
                 },
+				symbolSize:function(value, params){ return nodeSize[params.data.name]; },
                 force: { repulsion: 1000 }
             }
         ]
@@ -424,7 +423,7 @@ function selectUnit(name, type){
 	type = type || 0;
 	var index = $("#tbList").datagrid("getRows").map(function(d){ return d.name; }).indexOf(name);
 	$("#tbList").datagrid("selectRow", index);
-
+	
 	viewTree(function(node, h){ if(node.text!=name)return;
 		target = $('#tt').tree('find', node.id).target;
 		$("#tt").tree("select", target).tree("scrollTo", target);

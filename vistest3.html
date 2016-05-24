@@ -4,18 +4,18 @@
   <title>Network |  Static smooth curves - World Cup Network</title>
   
   <script src="js/jquery-1.9.1.js"></script>
-  <script type="text/javascript" src="js/vis.js"></script>
+  <script type="text/javascript" src="js/public.js"></script>
   <script type="text/javascript" src="js/json2.js"></script>  
   <script type="text/javascript" src="js/ejs.js"></script>    
-  <script type="text/javascript" src="js/network.js"></script>
   <script type='text/javascript' src="js/echarts.min.js"></script>
   <script type='text/javascript' src="js/datazoom.js"></script>
   <script type='text/javascript' src="js/d3.v3.min.js"></script>
   <script type='text/javascript' src="js/jquery.min.js"></script>
   <script type='text/javascript' src="js/jquery.easyui.min.js"></script>
-  <script type='text/javascript' src='js/jquery.tipsy.js'></script>
-  
-	<link rel="stylesheet" href="css/tipsy.css" type="text/css" />  
+
+  <script type="text/javascript" src="js/networky.js"></script>
+   
+	<link href="css/tipsy.css" rel="stylesheet">  
   	<link type="text/css" rel="stylesheet" href="css/vis.css">
 	<!-- Bootstrap core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -25,7 +25,8 @@
 
     <link href="css/icon.css" rel="stylesheet">
 	<link href="css/easyui.css" rel="stylesheet">
-    
+
+        
   <style type="text/css">
     #mynetwork {
       width: 800px;
@@ -113,12 +114,12 @@
 <script type="text/javascript">
 	var __did = null;
 	var __myChart = null;
+	var PATH, Project, lsProj, maxNodeSize;
 	$(document).ready(function (e) {
 		$('ul.nav a').click(function (e) {
 			e.preventDefault();
 			$(this).tab('show');
 		});
-		
 		loaddata();
 		
 	});
@@ -132,11 +133,13 @@
 			success:function(data)
 			{
 				dt = JSON.parse(data);
+				
+				Project = dt.project;
+				lsProj = getValues(Project);
+				PATH = dt.path;
+				
 				loadFirst(dt);
-				loadNetwork(dt);
-				//var nodesDataset = new vis.DataSet(temp.nodes); // these come from WorldCup2014.js
-				//var edgesDataset = new vis.DataSet(temp.edges); // these come from WorldCup2014.js
-				//redrawAll(nodesDataset, edgesDataset);
+				loadNetwork(lsProj);
 				
 			},
 			error:function(data)
@@ -146,10 +149,18 @@
 		});
 	}
 
-function loadNetwork(data){
-	__myChart = echarts.init(document.getElementById(__did));
-	__myChart.setOption(netOption(Data_d3ToEC(data.network)));
+function loadNetwork(lsp){
+	var unitProjCount={}, degree = getDegreeByProject(lsp, PATH, unitProjCount);
+	if(!maxNodeSize)maxNodeSize = getValues(unitProjCount).reduce(function(a, b){ return a<b?b:a; }, 0);
+	var G=reNetwork(lsp, degree);
+	G.community_detection();
+	var nds = getNodeInfo(G, PATH);
+	$("#tbList").datagrid('loadData',{"total":nds.length, "rows":nds }); 	//列表
+	$("#tbList").datagrid({ onSelect: selectItem });
 	
+	draw_graph_echarts(__did, G.get_graph_echarts(PATH), unitProjCount);
+
+	return;
 	$("#tbList").datagrid('loadData',{"total":dt.nodes.length, "rows":dt.nodes }); 	//列表
 	$("#tbList").datagrid({ onSelect: selectNode });
 	var html = ejs.render($("#tm_table").html(), { net:dt.netInfo, module:{"modular":dt.network.modular,
@@ -168,6 +179,20 @@ function loadNetwork(data){
 		return tree;
 	}
 }
+function reNetwork(_project, _degree){
+	var G = ny.Graph();
+	var lsu, lscore, links = {}, key = "";
+	$(_project).each(function(i, p){
+		lsu = getKeys(p.unit);
+		if(lsu.length<2)return;
+		lscore = getBig2(lsu, _degree);		//核心节点
+		range(lsu, function(a, b){	
+			if((lscore.indexOf(a) + lscore.indexOf(b)) == -2)return;	//过滤
+			G.add_edge([a, b]);
+		});	
+	});
+	return G;
+}
 //加载基础性框架
 function loadFirst(_data) {
 	var datazoom = new Zoom("mynetwork");
@@ -177,6 +202,65 @@ function loadFirst(_data) {
 	getProjectPos(_data.project, _data.path);
 	
 }
+function getDegreeByProject(_project, _path, upc){
+	var dg = {}; 
+	$(_project).each(function(i, p){
+		lsu = getKeys(p.unit);
+		if(lsu.length<2)return;
+		for(var j=0; j<lsu.length; j++){
+			var uj = _path[lsu[j]];
+			upc[uj] = upc.hasOwnProperty(uj) ? upc[uj]+1 : 1; 
+			for(var k=j+1; k<lsu.length; k++){
+				var uk = _path[lsu[k]];
+				if(uj == undefined || uk == undefined)continue;
+				if(dg[lsu[j]] == undefined)dg[lsu[j]] = {};
+				if(dg[lsu[j]][lsu[k]] == undefined)dg[lsu[j]][lsu[k]] = 1;
+				if(dg[lsu[k]] == undefined)dg[lsu[k]] = {};
+				if(dg[lsu[k]][lsu[j]] == undefined)dg[lsu[k]][lsu[j]] = 1;
+			}
+		}
+	});
+	for(var key in dg)dg[key] = getItemsCount(dg[key]);
+	return dg;
+}
+function getBig2(lsUnit, _degree){
+	var ls = lsUnit.map(function(d, i){ return [d, _degree[d]]; });
+	ls.sort(function(a, b){ return a[1] < b[1]; });
+	return ls.length>1 ? [ls[0][0], ls[1][0]] : ls[0][0];
+}
+
+function getNetInfo(G, _path){
+	return { 'avg_degree':G, 'avg_path':G, 'clustering':G, 'diameter':G, 'len_components':G,
+		'len_edges':G, 'len_nodes':G }
+}
+function getNodeInfo(G, _path){
+	var _nodes = G.nodes(), degree = G.degree(), betweenness = G.betweenness_centrality();;
+	return _nodes.map(function(d, i){
+		return { 'numb':i+1, 'name':_path[d], 'degree':degree[d], 
+			'btness':betweenness[d]==0 ? 0 : betweenness[d].toFixed(3), 'nofit':0 };
+	});
+}
+function draw_graph_echarts(id, data, nodeSize){
+	__myChart = echarts.init(document.getElementById(id));
+	__myChart.setOption(netOption(data, nodeSize));
+
+	__myChart.on('click', function(param){
+		var data = param.data;	
+		if(data.source !== undefined && data.target !== undefined)selectEdge(data); //点击节点
+		else selectNode(data);		//单击连边
+	});
+	
+}
+function selectItem(id, data){
+	__myChart.dispatchAction({type: 'highlight', seriesIndex:0, name:data.name});
+}
+function selectNode(data){
+	selectUnit(data.name);
+}
+function selectEdge(data){
+	
+}
+
 function getProjectPos(_proj, _path){
 	var len = function(d){ return d };
 	function dateB(t1, t2){ return (new Date(t1)).getTime() > (new Date(t2)).getTime()}; //Big
@@ -234,11 +318,11 @@ function getProjectPos(_proj, _path){
 		.attr("width", width)
 		.attr("height", height);
 	var rect = svg.append("g")
-		.selectAll(".tooltipes")
+		.selectAll(".tooltipess")
 		.data(dataset)
 		.enter()
 		.append("rect")
-		.attr("class","tooltipes")
+		.attr("class","tooltipess")
 		.attr("y", function(d,i){
 			return d[0] * (perH + 6);
 		} )
@@ -292,81 +376,58 @@ function getProjectPos(_proj, _path){
 	//console.log(_proj);
 	//console.log(lsp);	
 
-	$('.tooltipes').tipsy({ html:true, gravity:'se', fade: true });
+	$('.tooltipess').tipsy({ html:true, gravity:'e', fade: false });
 //	alert(JSON.stringify(proj));
 }
 function Data_d3ToVis(data){
 	return { nodes: data.nodes.map(function(d, i){ return {id: d.id, label: d.name, group:d.group }; }),
 		 	 edges: data.links.map(function(d, i){ return {from: d.source, to: d.target }; }) };
 }
-function Data_d3ToEC(data){
-	var groupc = data.nodes.reduce(function(a, b){ return a>parseInt(b.group) ? a : parseInt(b.group); }, 0);
-	return { nodes: data.nodes.map(function(d, i ){ return {id: d.id, name: d.name, value: 10, 
-					category:d.group, label:{normal:{show:true}} };
-					}),
-			 links: data.links.map(function(d, i ){ return {source: d.source, target:d.target}; }),
-			 groups: range(1, groupc + 2).map(function(d, i){ return "社团" + i; }) };
-}
-function netOption(_data){
+
+function netOption(_data, nodeSize){
+	var nSize = d3.scale.linear().domain([0, maxNodeSize]).range([5,26]); 
 	var option = {
-        title: {
-            text: 'Department', subtext: ' ', top: 'bottom', left: 'right'
-        },
-        tooltip: {},
+        title: { text: 'Department', subtext: ' ', top: 'bottom', left: 'right' },
         legend: [{
-            // selectedMode: 'single',
-            data: _data.groups
+            data: _data.groups, // selectedMode: 'single',
         }],
+		tooltip: {},
         animation: false,
         series : [
             {
                 name: '部门',
-                type: 'graph',
-                layout: 'force',
-                data: _data.nodes,
-                links: _data.links,
-                categories: _data.groups,
-                roam: true,
+                type: 'graph', layout: 'force', roam: true,
+                data: _data.nodes, links: _data.links, categories: _data.groups,
                 label: {
                     normal: {
                         position: 'right',
 						formatter: '{b}'	
                     }
                 },
-                force: {
-                    repulsion: 1000
-                }
+				symbolSize:function(value, params){  return nSize(nodeSize[params.data.name]); },
+                force: { repulsion: 1000 }
             }
         ]
     };
 	return option;	
 }
 
+//项目起始时间，时间段
+function timeBetween(begin, end, t1, t2){
+	end = end || dateF(new Date());
+	function Time(str){ return new Date(Date.parse(str.replace(/-/g, "/"))).getTime(); };
+	var _b = Time(begin), _e = Time(end), _t1 = Time(t1), _t2 = Time(t2);
+	return !(_b>_t2 || _t1>_e);
+}
+function getProjectByTime(t1, t2){
+	return lsProj.filter(function(d){ return timeBetween(d.begin, d.end, t1, t2); });
+}
 function listenZoom(pos, time){
 	__myChart.showLoading();
-	console.log("request..");
-	$.ajax({
-			type:'GET',
-			url:'http://127.0.0.1:8000/network_part/',
-			dataType:'jsonp',
-			data:{'begin':time[0][0], 'end':time[1][0]},
-			jsonpCallback: 'call1back2',
-			success:function(data)
-			{
-				__myChart.hideLoading();
-				dt = JSON.parse(data);
-				
-				loadNetwork(dt);
-				
-				
-			},
-			error:function(data)
-			{
-				alert("error");
-			}
-	});
-	
-	//alert(JSON.stringify(time));
+	lsp = getProjectByTime(time[0][0], time[1][0]);
+	console.log(time);
+	loadNetwork(lsp);
+	__myChart.hideLoading();
 }
 
 function viewTree(callback){
@@ -398,17 +459,10 @@ function selectUnit(name, type){
 	});
 }
 
-function selectNode(rowIndex, rowData){
-//	rowData.name;
-//	network.nodes.
-	cout(network.options);
-}
-
-//  redrawAll()
 
 </script>
 
 <script src="js/bootstrap.min.js"></script>
-
+  <script type='text/javascript' src='js/jquery.tipsy.js'></script>
 
 </body></html>
